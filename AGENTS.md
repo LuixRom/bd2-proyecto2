@@ -114,3 +114,31 @@ List[dict] = [
 | Extractor | KarolayTamayoH | `.agents/extractor.md` |
 | Codebook | LuixRom | `.agents/codebook.md` |
 | Retrieval | hanksvi | `.agents/retrieval.md` |
+
+
+## 8. Datasets disponibles
+
+Los datos NO están en el repo. Cada integrante los descarga localmente con
+`./scripts/download_data.sh <nombre>`. No commitear nada de `data/full/`.
+
+| Nombre | Modalidad principal | Cómo descargarlo |
+|---|---|---|
+| SciMMIR | Texto + Imagen (papers arXiv con figuras) | `./scripts/download_data.sh arxiv` |
+| Spotify songs | Audio + Lyrics | `./scripts/download_data.sh spotify` |
+| Fashion product images | Imagen | `./scripts/download_data.sh fashion` |
+
+### Estructura local esperada (generada por el script)
+```plaintext
+data/
+├── samples/   # en git — muestra chica para tests
+└── full/      # en .gitignore — datos reales, solo local
+    ├── scimmir/
+    ├── .kaggle_cache/
+    └── (kaggle datasets aquí)
+```
+
+### Para los módulos
+- **softkp (split):** los tres datasets como input
+- **KarolayTamayoH (extractor):** idem
+- **LuixRom (codebook):** usa output del extractor, no lee datasets directo
+- **hanksvi (retrieval):** usa output del codebook, no lee datasets directo
