@@ -41,3 +41,22 @@ markdown## 5. Responsabilidades
 - No pushear directo a `main` ni a `dev`
 - Correr `run_tests.sh` antes de cada PR
 - Un integrante = un módulo = commits verificables
+
+## 7. Datasets
+Los datasets NO se versionan en git. Se descargan localmente con:
+
+```bash
+./scripts/download_data.sh arxiv    # SciMMIR — texto + imágenes (arXiv)
+./scripts/download_data.sh spotify  # audio + lyrics (~44 MB)
+./scripts/download_data.sh fashion  # imágenes fashion (decenas de GB)
+```
+
+Requiere token de Kaggle una vez: Kaggle → Settings → API → Create New Token → guardar en `~/.kaggle/kaggle.json`
+
+| Dataset | Modalidad | Fuente |
+|---|---|---|
+| SciMMIR (arXiv) | Texto + Imagen | HuggingFace: `m-a-p/SciMMIR` |
+| Spotify songs | Audio + Texto | Kaggle: `imuhammad/audio-features-and-lyrics-of-spotify-songs` |
+| Fashion product images | Imagen | Kaggle: `paramaggarwal/fashion-product-images-dataset` |
+
+`data/full/` está en `.gitignore`. Solo `data/samples/` se versiona.
