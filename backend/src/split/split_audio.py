@@ -1,13 +1,14 @@
 from pathlib import Path
 import numpy as np
 import librosa
+from .split import SplitBase
 
 SAMPLE_RATE = 22050
 WINDOW_SECONDS = 1.0
 HOP_SECONDS = 0.5
 SUPPORTED_EXTENSIONS = [".wav", ".mp3", ".flac", ".ogg", ".m4a"]
 
-class SplitAudio:
+class SplitAudio(SplitBase):
     def __init__(self, sample_rate=SAMPLE_RATE, window_seconds=WINDOW_SECONDS, hop_seconds=HOP_SECONDS, keep_last_window=True):
         self.sample_rate = sample_rate
         self.window_seconds = window_seconds
@@ -24,13 +25,8 @@ class SplitAudio:
             raise ValueError("hop_size debe ser mayor a 0")
 
     def split_file(self, file_path: str, document_id: str = None):
-        file_path = Path(file_path)
-
-        if not file_path.exists():
-            raise FileNotFoundError(f"no existe el archivo: {file_path}")
-
-        if file_path.suffix.lower() not in SUPPORTED_EXTENSIONS:
-            raise ValueError(f"formato no soportado: {file_path.suffix}")
+        file_path = self.normalize_file_path(file_path)
+        self.validate_extension(file_path, SUPPORTED_EXTENSIONS)
 
         if document_id is None:
             document_id = self.get_document_id(file_path)
@@ -59,14 +55,12 @@ class SplitAudio:
 
             window = window.astype(np.float32)
 
-            chunk = {
-                "chunk_id": f"{document_id}_audio_{chunk_index}",
-                "document_id": document_id,
-                "doc_id": document_id,
-                "modality": "audio",
-                "chunk_index": chunk_index,
-                "content": window,
-                "metadata": {
+            chunk = self.build_chunk(
+                document_id=document_id,
+                modality="audio",
+                chunk_index=chunk_index,
+                content=window,
+                metadata={
                     "source_path": source_path,
                     "sample_rate": self.sample_rate,
                     "start_sample": start,
@@ -80,7 +74,8 @@ class SplitAudio:
                     "original_size": original_size,
                     "padded": original_size < self.window_size,
                 },
-            }
+                extra_fields={"doc_id": document_id},
+            )
 
             chunks.append(chunk)
             chunk_index += 1
@@ -116,10 +111,6 @@ class SplitAudio:
         padded = np.zeros(self.window_size, dtype=np.float32)
         padded[:len(window)] = window
         return padded
-
-    def get_document_id(self, file_path):
-        return Path(file_path).stem
-
 
 def print_chunks(chunks):
     print(f"Total ventanas generadas: {len(chunks)}")

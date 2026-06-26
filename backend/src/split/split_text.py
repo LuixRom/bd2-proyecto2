@@ -2,26 +2,24 @@ import os
 import re
 from pathlib import Path
 import fitz  #pymupdf
+from .split import SplitBase
 
 MIN_CHUNK_CHARS = 40
 MAX_CHUNK_CHARS = 800
 DEFAULT_ENCODING = "utf-8"
+SUPPORTED_EXTENSIONS = [".txt", ".md", ".pdf"]
 
-class SplitText:
+class SplitText(SplitBase):
     def __init__(self, min_chars=MIN_CHUNK_CHARS, max_chars=MAX_CHUNK_CHARS):
         self.min_chars = min_chars
         self.max_chars = max_chars
 
     def split_file(self, file_path: str, document_id: str = None):
-        file_path = Path(file_path)
-
-        if not file_path.exists():
-            raise FileNotFoundError(f"no existe el archivo: {file_path}")
+        file_path = self.normalize_file_path(file_path)
+        extension = self.validate_extension(file_path, SUPPORTED_EXTENSIONS)
 
         if document_id is None:
             document_id = self.get_document_id(file_path)
-
-        extension = file_path.suffix.lower()
 
         if extension in [".txt", ".md"]:
             text = self.read_txt(file_path)
@@ -46,19 +44,20 @@ class SplitText:
             parts = self.split_large_paragraph(paragraph)
 
             for part in parts:
-                chunk = {
-                    "chunk_id": f"{document_id}_text_{chunk_index}",
-                    "doc_id": document_id,
-                    "document_id": document_id,
-                    "modality": "text",
-                    "chunk_index": chunk_index,
-                    "text": part,
-                    "content": part,
-                    "metadata": {
+                chunk = self.build_chunk(
+                    document_id=document_id,
+                    modality="text",
+                    chunk_index=chunk_index,
+                    content=part,
+                    metadata={
                         "source_path": source_path,
                         "num_chars": len(part),
-                    }
-                }
+                    },
+                    extra_fields={
+                        "doc_id": document_id,
+                        "text": part,
+                    },
+                )
 
                 chunks.append(chunk)
                 chunk_index += 1
@@ -90,7 +89,7 @@ class SplitText:
             )
 
             for chunk in page_chunks:
-                chunk["chunk_id"] = f"{document_id}_text_{chunk_index}"
+                chunk["chunk_id"] = self.get_chunk_id(document_id, "text", chunk_index)
                 chunk["chunk_index"] = chunk_index
                 chunk["metadata"]["page"] = page_index + 1
                 chunks.append(chunk)
@@ -176,10 +175,6 @@ class SplitText:
 
         return parts
 
-    def get_document_id(self, file_path):
-        file_path = Path(file_path)
-        return file_path.stem
-    
 def print_chunks(chunks):
     print(f"Total chunks generados: {len(chunks)}")
 

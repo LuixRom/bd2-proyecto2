@@ -1,25 +1,21 @@
 from pathlib import Path
 import numpy as np
 from PIL import Image
+from .split import SplitBase
 
 PATCH_SIZE = 224
 STRIDE = 112
 SUPPORTED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp"]
 
-class SplitImage:
+class SplitImage(SplitBase):
     def __init__(self, patch_size=PATCH_SIZE, stride=STRIDE, keep_borders=True):
         self.patch_size = patch_size
         self.stride = stride
         self.keep_borders = keep_borders
 
     def split_file(self, file_path: str, document_id: str = None):
-        file_path = Path(file_path)
-
-        if not file_path.exists():
-            raise FileNotFoundError(f"no existe el archivo: {file_path}")
-
-        if file_path.suffix.lower() not in SUPPORTED_EXTENSIONS:
-            raise ValueError(f"formato no soportado: {file_path.suffix}")
+        file_path = self.normalize_file_path(file_path)
+        self.validate_extension(file_path, SUPPORTED_EXTENSIONS)
 
         if document_id is None:
             document_id = self.get_document_id(file_path)
@@ -51,13 +47,12 @@ class SplitImage:
 
                 patch_array = np.array(patch, dtype=np.uint8)
 
-                chunk = {
-                    "chunk_id": f"{document_id}_image_{chunk_index}",
-                    "document_id": document_id,
-                    "modality": "image",
-                    "chunk_index": chunk_index,
-                    "content": patch_array,
-                    "metadata": {
+                chunk = self.build_chunk(
+                    document_id=document_id,
+                    modality="image",
+                    chunk_index=chunk_index,
+                    content=patch_array,
+                    metadata={
                         "source_path": source_path,
                         "x": x,
                         "y": y,
@@ -69,7 +64,7 @@ class SplitImage:
                         "stride": self.stride,
                         "padded": original_width < self.patch_size or original_height < self.patch_size,
                     },
-                }
+                )
 
                 chunks.append(chunk)
                 chunk_index += 1
@@ -96,9 +91,6 @@ class SplitImage:
         new_patch = Image.new("RGB", (self.patch_size, self.patch_size))
         new_patch.paste(patch, (0, 0))
         return new_patch
-
-    def get_document_id(self, file_path):
-        return Path(file_path).stem
 
 def print_chunks(chunks):
     print(f"Total patches generados: {len(chunks)}")
