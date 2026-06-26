@@ -28,13 +28,13 @@
 - Asignarse el issue antes de empezar a codear
 - Cerrar el issue con el PR correspondiente
 
-## 5. Responsabilidades
+markdown## 5. Responsabilidades
 | Integrante | Módulo principal | Detalle |
 |---|---|---|
-| LuixRom | Pipeline Texto | Split texto + TF-IDF + SPIMI + Comparativa GIN |
-| hanksvi | Pipeline Imagen + Frontend | Split imagen + SIFT + Comparativa pgvector + UI Next.js |
-| KarolayTamayoH | Pipeline Audio + App 1 | Split audio + MFCC + App Búsqueda Musical |
-| softkp | Backend + Infra + App 2 | PostgreSQL + Docker + FastAPI + Evaluación experimental + App 2 |
+| LuixRom | Codebook + Frontend | Top-K palabras + K-Means visual + K-Means acústico + UI Next.js |
+| hanksvi | Retrieval e Índices + Apps | SPIMI + índice invertido + histogramas visuales y acústicos + App 1 + App 2 |
+| KarolayTamayoH | Feature Extraction + Evaluación | TF-IDF + SIFT + MFCC + Evaluación experimental + Comparativas GIN/pgvector |
+| softkp | Split + Infra | División texto/imagen/audio (párrafos, patches, sliding windows) + Docker + PostgreSQL |
 
 ## 6. Reglas generales
 - Archivos máximo 100 líneas (excepto configuración)
