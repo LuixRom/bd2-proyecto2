@@ -45,6 +45,30 @@ done
 $DC exec -T db psql -U "${POSTGRES_USER:-bd2}" -d "${POSTGRES_DB:-bd2_proyecto2}" \
     -c "CREATE EXTENSION IF NOT EXISTS vector;" >/dev/null 2>&1 || true
 
+# Aplicar migraciones iniciales si existen
+if [ -d db/migrations ]; then
+    echo " Aplicando migraciones..."
+    for migration in db/migrations/*.sql; do
+        [ -e "$migration" ] || continue
+        echo "   -> $migration"
+        $DC exec -T db psql -U "${POSTGRES_USER:-bd2}" -d "${POSTGRES_DB:-bd2_proyecto2}" \
+            -f "/migrations/$(basename "$migration")"
+    done
+fi
+
+# Esperar a que el backend responda si el servicio esta definido
+if $DC ps --services | grep -qx "backend"; then
+    echo " Esperando a Backend..."
+    for i in $(seq 1 30); do
+        if $DC exec -T backend python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)" >/dev/null 2>&1; then
+            echo " Backend listo"
+            break
+        fi
+        sleep 1
+        if [ "$i" -eq 30 ]; then echo "  Backend tardo demasiado; revisa '$DC logs backend'."; fi
+    done
+fi
+
 # 4. Entorno virtual + dependencias Python
 echo " Configurando entorno Python..."
 [ -d .venv ] || python3 -m venv .venv

@@ -11,11 +11,47 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./db/init:/docker-entrypoint-initdb.d
+      - ./db/migrations:/migrations:ro
+    networks:
+      - bd2_net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-bd2} -d ${POSTGRES_DB:-bd2_proyecto2}"]
       interval: 5s
       timeout: 3s
       retries: 10
 
+  backend:
+    build:
+      context: ./backend
+    container_name: bd2_backend
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-bd2}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bd2}
+      POSTGRES_DB: ${POSTGRES_DB:-bd2_proyecto2}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-bd2}:${POSTGRES_PASSWORD:-bd2}@db:5432/${POSTGRES_DB:-bd2_proyecto2}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - bd2_net
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)\"",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
 volumes:
   pgdata:
+
+networks:
+  bd2_net:
+    driver: bridge

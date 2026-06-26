@@ -2,3 +2,5 @@ pymupdf
 pillow
 librosa
 pytest
+fastapi
+uvicorn[standard]
